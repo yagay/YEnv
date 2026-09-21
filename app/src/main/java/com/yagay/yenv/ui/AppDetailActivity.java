@@ -9,7 +9,9 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -43,6 +45,8 @@ public final class AppDetailActivity extends AppCompatActivity implements YEnvAp
     private TextView summary;
     private TextView scopeState;
     private final Map<String, EditText> fields = new LinkedHashMap<>();
+    private final Map<String, Spinner> choiceSpinners = new LinkedHashMap<>();
+    private final Map<String, String[]> choicePresets = new LinkedHashMap<>();
     private Spinner nightMode, orientation, screenshots, keepScreen, locationMode;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +65,8 @@ public final class AppDetailActivity extends AppCompatActivity implements YEnvAp
 
     private void buildUi() {
         fields.clear();
+        choiceSpinners.clear();
+        choicePresets.clear();
         ScrollView scroll = new ScrollView(this);
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -104,20 +110,30 @@ public final class AppDetailActivity extends AppCompatActivity implements YEnvAp
         Configuration cf = getResources().getConfiguration();
 
         section("显示与分辨率");
-        addField("densityDpi", "DPI / densityDpi", String.valueOf(dm.densityDpi), val(config.densityDpi), "例如 420；留空=默认");
-        addField("widthPixels", "虚拟宽度 px", String.valueOf(dm.widthPixels), val(config.widthPixels), "例如 1080");
-        addField("heightPixels", "虚拟高度 px", String.valueOf(dm.heightPixels), val(config.heightPixels), "例如 2400");
-        addField("smallestWidthDp", "最小宽度 dp", String.valueOf(cf.smallestScreenWidthDp), val(config.smallestWidthDp), "600 常用于平板布局");
-        addField("screenWidthDp", "screenWidthDp", String.valueOf(cf.screenWidthDp), val(config.screenWidthDp), "可独立覆盖");
-        addField("screenHeightDp", "screenHeightDp", String.valueOf(cf.screenHeightDp), val(config.screenHeightDp), "可独立覆盖");
-        addField("fontScale", "字体缩放", String.valueOf(cf.fontScale), val(config.fontScale), "1.0=100%  0.9=90%");
-        addField("xdpi", "xDpi", String.valueOf(dm.xdpi), val(config.xdpi), "留空=真实值");
-        addField("ydpi", "yDpi", String.valueOf(dm.ydpi), val(config.ydpi), "留空=真实值");
-        addField("refreshRate", "刷新率 Hz", defaultRefreshRate(), val(config.refreshRate), "例如 60 / 90 / 120；仅覆盖 App 读取值");
+        addChoiceField("densityDpi", "DPI / densityDpi", String.valueOf(dm.densityDpi), val(config.densityDpi),
+                "输入任意 72–1000 的 DPI", new String[]{"120","160","213","240","280","320","360","380","400","420","440","480","560","640"});
+        addChoiceField("widthPixels", "虚拟宽度 px", String.valueOf(dm.widthPixels), val(config.widthPixels),
+                "输入自定义宽度", new String[]{"720","900","1080","1200","1440"});
+        addChoiceField("heightPixels", "虚拟高度 px", String.valueOf(dm.heightPixels), val(config.heightPixels),
+                "输入自定义高度", new String[]{"1280","1600","1920","2160","2340","2400","2520","2670","2772","3120","3200"});
+        addChoiceField("smallestWidthDp", "最小宽度 dp", String.valueOf(cf.smallestScreenWidthDp), val(config.smallestWidthDp),
+                "输入自定义 smallestWidthDp", new String[]{"320","360","384","392","411","480","600","720","840"});
+        addChoiceField("screenWidthDp", "screenWidthDp", String.valueOf(cf.screenWidthDp), val(config.screenWidthDp),
+                "输入自定义 screenWidthDp", new String[]{"320","360","384","392","411","480","600","720","840"});
+        addChoiceField("screenHeightDp", "screenHeightDp", String.valueOf(cf.screenHeightDp), val(config.screenHeightDp),
+                "输入自定义 screenHeightDp", new String[]{"640","720","800","840","891","960","1080","1280"});
+        addChoiceField("fontScale", "字体缩放", String.valueOf(cf.fontScale), val(config.fontScale),
+                "输入自定义比例，例如 1.08", new String[]{"0.80","0.90","0.95","1.00","1.05","1.10","1.15","1.20","1.30"});
+        addField("xdpi", "xDpi", String.valueOf(dm.xdpi), val(config.xdpi), "高级参数；留空=真实值");
+        addField("ydpi", "yDpi", String.valueOf(dm.ydpi), val(config.ydpi), "高级参数；留空=真实值");
+        addChoiceField("refreshRate", "刷新率 Hz", defaultRefreshRate(), val(config.refreshRate),
+                "输入自定义刷新率", new String[]{"60","90","120","144","165"});
 
         section("语言、地区与时间");
-        addField("localeTag", "Locale / 应用语言", Locale.getDefault().toLanguageTag(), val(config.localeTag), "BCP-47，例如 zh-CN / en-GB");
-        addField("timeZoneId", "时区", TimeZone.getDefault().getID(), val(config.timeZoneId), "例如 Europe/London / Asia/Shanghai");
+        addChoiceField("localeTag", "Locale / 应用语言", Locale.getDefault().toLanguageTag(), val(config.localeTag),
+                "输入 BCP-47，例如 es-ES", new String[]{"zh-CN","zh-TW","en-GB","en-US","ja-JP","ko-KR","de-DE","fr-FR"});
+        addChoiceField("timeZoneId", "时区", TimeZone.getDefault().getID(), val(config.timeZoneId),
+                "输入 IANA 时区", new String[]{"UTC","Asia/Shanghai","Asia/Hong_Kong","Asia/Tokyo","Asia/Seoul","Asia/Kuala_Lumpur","Asia/Singapore","Europe/London","Europe/Paris","Europe/Berlin","America/New_York","America/Chicago","America/Denver","America/Los_Angeles"});
         nightMode = addSpinner("深色模式", "系统当前=" + nightText(cf), new String[]{"默认", "浅色", "深色"}, nightIndex(config.nightMode));
 
         section("窗口与方向");
@@ -131,11 +147,16 @@ public final class AppDetailActivity extends AppCompatActivity implements YEnvAp
         addField("latitude", "纬度", "真实系统定位", val(config.latitude), "-90..90");
         addField("longitude", "经度", "真实系统定位", val(config.longitude), "-180..180");
         addField("altitude", "海拔 m", "Location 原值", val(config.altitude), "可留空");
-        addField("accuracy", "精度 m", "Location 原值", val(config.accuracy), "例如 5");
-        addField("speed", "速度 m/s", "Location 原值", val(config.speed), "例如 1.4");
-        addField("bearing", "方向 °", "Location 原值", val(config.bearing), "0..360");
-        addField("randomRadiusMeters", "随机半径 m", "0", val(config.randomRadiusMeters), "随机模式使用");
-        addField("locationUpdateIntervalMs", "随机更新间隔 ms", "5000", val(config.locationUpdateIntervalMs), "最小建议 1000");
+        addChoiceField("accuracy", "精度 m", "Location 原值", val(config.accuracy),
+                "输入自定义精度", new String[]{"3","5","10","20","50","100"});
+        addChoiceField("speed", "速度 m/s", "Location 原值", val(config.speed),
+                "输入自定义速度", new String[]{"0","1.4","5","10","20","30"});
+        addChoiceField("bearing", "方向 °", "Location 原值", val(config.bearing),
+                "输入 0–360", new String[]{"0","45","90","135","180","225","270","315"});
+        addChoiceField("randomRadiusMeters", "随机半径 m", "0", val(config.randomRadiusMeters),
+                "输入自定义随机半径", new String[]{"0","10","50","100","500","1000","5000"});
+        addChoiceField("locationUpdateIntervalMs", "随机更新间隔 ms", "5000", val(config.locationUpdateIntervalMs),
+                "输入自定义毫秒数", new String[]{"1000","3000","5000","10000","30000","60000"});
 
         section("应用原始信息 / 诊断");
         root.addView(text(buildRawInfo(), 13, false));
@@ -172,6 +193,63 @@ public final class AppDetailActivity extends AppCompatActivity implements YEnvAp
         box.addView(row);
         fields.put(key, edit);
         root.addView(box);
+    }
+
+    private Spinner addChoiceField(String key, String label, String defaultValue, String current, String hint, String[] presets) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(0, dp(6), 0, dp(8));
+        box.addView(text(label, 15, true));
+        box.addView(text("默认/真实：" + defaultValue, 12, false));
+
+        String[] options = new String[presets.length + 2];
+        options[0] = "默认";
+        System.arraycopy(presets, 0, options, 1, presets.length);
+        options[options.length - 1] = "自定义…";
+
+        Spinner spinner = new Spinner(this);
+        spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, options));
+
+        EditText custom = new EditText(this);
+        custom.setSingleLine(true);
+        custom.setHint(hint);
+        custom.setText(current == null ? "" : current);
+
+        int selected = 0;
+        if (current != null && !current.isBlank()) {
+            selected = presets.length + 1;
+            for (int i = 0; i < presets.length; i++) {
+                if (presets[i].equals(current)) {
+                    selected = i + 1;
+                    break;
+                }
+            }
+        }
+        final int customIndex = presets.length + 1;
+        custom.setVisibility(selected == customIndex ? View.VISIBLE : View.GONE);
+        spinner.setSelection(selected, false);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) custom.setText("");
+                else if (position <= presets.length) custom.setText(presets[position - 1]);
+                custom.setVisibility(position == customIndex ? View.VISIBLE : View.GONE);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        LinearLayout row = horizontal();
+        row.addView(spinner, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        Button reset = button("恢复");
+        reset.setOnClickListener(v -> spinner.setSelection(0));
+        row.addView(reset);
+        box.addView(row);
+        box.addView(custom);
+        root.addView(box);
+
+        fields.put(key, custom);
+        choiceSpinners.put(key, spinner);
+        choicePresets.put(key, presets);
+        return spinner;
     }
 
     private Spinner addSpinner(String label, String defaultValue, String[] options, int selected) {
@@ -238,13 +316,36 @@ public final class AppDetailActivity extends AppCompatActivity implements YEnvAp
 
     private void applyPreset(String preset) {
         if ("tablet".equals(preset)) {
-            fields.get("densityDpi").setText("320"); fields.get("smallestWidthDp").setText("600"); fields.get("fontScale").setText("1.0");
+            setFieldValue("densityDpi", "320");
+            setFieldValue("smallestWidthDp", "600");
+            setFieldValue("fontScale", "1.00");
         } else if ("compact".equals(preset)) {
-            fields.get("densityDpi").setText("380"); fields.get("fontScale").setText("0.95");
+            setFieldValue("densityDpi", "380");
+            setFieldValue("fontScale", "0.95");
         } else if ("uk".equals(preset)) {
-            fields.get("localeTag").setText("en-GB"); fields.get("timeZoneId").setText("Europe/London");
+            setFieldValue("localeTag", "en-GB");
+            setFieldValue("timeZoneId", "Europe/London");
         }
         toast("模板已填入；检查后点击保存");
+    }
+
+    private void setFieldValue(String key, String value) {
+        EditText edit = fields.get(key);
+        if (edit == null) return;
+        edit.setText(value == null ? "" : value);
+        Spinner spinner = choiceSpinners.get(key);
+        String[] presets = choicePresets.get(key);
+        if (spinner == null || presets == null) return;
+        int selected = value == null || value.isBlank() ? 0 : presets.length + 1;
+        if (value != null) {
+            for (int i = 0; i < presets.length; i++) {
+                if (presets[i].equals(value)) {
+                    selected = i + 1;
+                    break;
+                }
+            }
+        }
+        spinner.setSelection(selected);
     }
 
     private void refreshStatus() {
