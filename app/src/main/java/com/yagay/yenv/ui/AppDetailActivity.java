@@ -223,9 +223,15 @@ public final class AppDetailActivity extends AppCompatActivity implements YEnvAp
     private void requestScope() {
         if (YEnvApp.getService() == null) { toast("LSPosed 服务未连接"); return; }
         ConfigRepository.requestScope(packageName, new XposedService.OnScopeEventListener() {
-            @Override public void onScopeRequestApproved(String pkg) { runOnUiThread(() -> { refreshStatus(); toast("已加入作用域"); }); }
-            @Override public void onScopeRequestDenied(String pkg) { runOnUiThread(() -> toast("作用域请求被拒绝")); }
-            @Override public void onScopeRequestFailed(String pkg, String message) { runOnUiThread(() -> toast("作用域请求失败：" + message)); }
+            @Override public void onScopeRequestApproved(List<String> approved) {
+                runOnUiThread(() -> {
+                    refreshStatus();
+                    toast(approved != null && approved.contains(packageName) ? "已加入作用域" : "作用域未批准");
+                });
+            }
+            @Override public void onScopeRequestFailed(String message) {
+                runOnUiThread(() -> toast("作用域请求失败：" + message));
+            }
         });
     }
 

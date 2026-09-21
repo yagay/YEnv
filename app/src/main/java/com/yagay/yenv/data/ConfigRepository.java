@@ -57,6 +57,6 @@ public final class ConfigRepository {
 
     public static void requestScope(String packageName, XposedService.OnScopeEventListener listener) {
         XposedService s = YEnvApp.getService();
-        if (s != null) s.requestScope(packageName, listener);
+        if (s != null) s.requestScope(Collections.singletonList(packageName), listener);
     }
 }
