@@ -149,7 +149,7 @@ public final class MainActivity extends AppCompatActivity implements YEnvApp.Ser
     private void updateServiceState() {
         if (serviceState == null) return;
         var s = YEnvApp.getService();
-        serviceState.setText(s == null ? "LSPosed 服务：未连接（配置不可写入）" : "LSPosed 服务：已连接 · API " + s.getAPIVersion());
+        serviceState.setText(s == null ? "LSPosed 服务：未连接（配置不可写入）" : "LSPosed 服务：已连接 · API " + s.getApiVersion());
     }
 
     @Override public void onServiceChanged() { runOnUiThread(() -> { updateServiceState(); loadApps(); }); }
